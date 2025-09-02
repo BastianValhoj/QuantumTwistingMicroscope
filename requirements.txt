@@ -1,0 +1,8 @@
+sisl
+numpy
+scipy
+ipykernel
+matplotlib
+numba
+seaborn
+
