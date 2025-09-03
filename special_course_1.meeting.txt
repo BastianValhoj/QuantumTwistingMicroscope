@@ -1,0 +1,31 @@
+Special course:
+
+title: multi-electrode approach to QTM
+
+package: "sisl"
+
+- create hexagon and make edge lines (armchair or zigzag) from carbon atoms
+
+
+        |       |
+        |       |
+    ____ ------- ____
+	/       \
+   __\ /         \ /__ 
+       \         /
+    ----\_______/----
+        |       |
+        |       |
+
+- play around with geometry
+- Make function easy to use
+
+
+
+
+
+Goal:
+- 5 ECTS
+- A Jupyter Notebook containing calculations and plots
+- A presentation of results / of notebook (either show notebook or a PowerPoint)
+
