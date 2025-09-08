@@ -3,13 +3,25 @@ import numpy
 import scipy
 import seaborn
 import matplotlib
+import ase
+SHIFT = 20
+
+libs = {
+    'sisl': sisl,
+    'numpy': numpy,
+    'scipy': scipy,
+    'seaborn': seaborn,
+    'matplotlib': matplotlib,
+    'ase': ase,
+}
 def main():
-    print("Hello from qtm!")
-    print("SISL version:", sisl.__version__)
-    print("NumPy version:", numpy.__version__)
-    print("SciPy version:", scipy.__version__)
-    print("Seaborn version:", seaborn.__version__)
-    print("Matplotlib version:", matplotlib.__version__)
+    print(f"Hello from qtm!")
+    for lib_name, lib in libs.items():
+        print(f"{lib_name.title() + ' version':>{SHIFT}}:", lib.__version__)
+
+
+
+
 
 
 if __name__ == "__main__":
