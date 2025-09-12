@@ -16,11 +16,13 @@ imageio==2.37.0
 ipykernel==6.30.1
 ipython==9.5.0
 ipython-pygments-lexers==1.1.1
+ipywidgets==8.1.7
 jedi==0.19.2
 jsonschema==4.25.1
 jsonschema-specifications==2025.4.1
 jupyter-client==8.6.3
 jupyter-core==5.8.1
+jupyterlab-widgets==3.0.15
 kiwisolver==1.4.9
 lazy-loader==0.4
 llvmlite==0.44.0
@@ -67,4 +69,5 @@ tornado==6.5.2
 traitlets==5.14.3
 tzdata==2025.2
 wcwidth==0.2.13
+widgetsnbextension==4.0.14
 xarray==2025.8.0
