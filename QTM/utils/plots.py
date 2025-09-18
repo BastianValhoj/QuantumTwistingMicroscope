@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import sisl
 
 import plotly.graph_objects as go
-from .structure_tools import guess_hexagon_center
-from .__init__ import _parse_E_range, hamiltonian, compute_dos
+from .structure import guess_hexagon_center
+from .energies import _parse_E_range, hamiltonian, compute_dos
 # ---------------------------
 # Plotting utilities
 # ---------------------------
@@ -52,9 +52,9 @@ def plot_DOS(width=5, length=5, **kwargs):
     plt.show()
     
 def plot_center_pdos(structure, radius, **kwargs):
-    if radius < 2:
+    if (radius < 2):
         print(f"Radius too small ({radius}), using radius=2")
-        radius=2
+        radius = 2
     center = structure.center() # xyz coordinate for center
     center_atoms = structure.close(center, radius) # C atom index within radius of center 
     E = _parse_E_range(**kwargs) # make list for energy values
@@ -65,10 +65,7 @@ def plot_center_pdos(structure, radius, **kwargs):
     ] # group of atoms to use for plot
     
     # make hamiltonian
-    H = sisl.Hamiltonian(structure)
-    r = (0.1, 1.44)
-    t = (0.0, -2.7)
-    H.construct([r, t])
+    H = hamiltonian(structure, **kwargs)
     
     plot_range = kwargs.get("range", (E[0], E[-1]))
     size = kwargs.get("size", len(E))

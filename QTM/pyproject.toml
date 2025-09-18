@@ -1,7 +1,10 @@
+[build-system]
+requires = ["setuptools>=80.9.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "qtm"
-version = "0.1.0"
-description = "Add your description here"
+description = "custom functions"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -13,5 +16,8 @@ dependencies = [
     "numpy>=2.2.6",
     "scipy>=1.16.1",
     "seaborn>=0.13.2",
+    "setuptools>=80.9.0",
     "sisl[viz]>=0.16.2",
 ]
+
+dynamic = ["version"]
