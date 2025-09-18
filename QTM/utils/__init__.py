@@ -10,7 +10,7 @@ from .plots import plot_DOS, plot_with_center, plot_center_pdos
 
 __all__ = ["_parse_E_range", "hamiltonian", "compute_dos", 
            "timeit",
-           "generate_structure", "make_nanoribbon"
+           "generate_structure", "make_nanoribbon",
            "__version__"
     ]
 
