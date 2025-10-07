@@ -4,6 +4,7 @@ import sisl
 import numpy as np
 from ._wrappers import timeit
 from .structure import generate_structure, make_nanoribbon
+from .energies import hamiltonian, compute_dos
 
 from .plots import plot_DOS, plot_with_center, plot_center_pdos
 
@@ -11,7 +12,9 @@ from .plots import plot_DOS, plot_with_center, plot_center_pdos
 __all__ = ["_parse_E_range", "hamiltonian", "compute_dos", 
            "timeit",
            "generate_structure", "make_nanoribbon",
+           "hamiltonian", "compute_dos",
            "__version__"
+           
     ]
 
 

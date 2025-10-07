@@ -109,19 +109,19 @@ def _init_indexes(nanoribbon):
 
 def _reorder_atoms(structure):
     x, y, z = structure.xyz.T
-    order = np.lexsort((x, y, z))
+    order = np.lexsort((y, z, x))
     return structure.sub(order) # 'use only these atoms' will then redefine the ordering of atoms to some easily predictable way
 
 def make_nanoribbon(width, length, **kwargs):
     """Generate a graphene nanoribbon."""
     bond = kwargs.get('bond', 1.42)
     kind = kwargs.get('kind', 'armchair')
-    no_BC = kwargs.get("BC", False)
+    BC = kwargs.get("BC", True)
     vacuum = kwargs.get('vacuum', 3.0)
     ribbon = sisl.geom.graphene_nanoribbon(width=width, bond=bond, kind=kind, vacuum=vacuum)
     ribbon = ribbon.repeat(length, axis=0)
     ribbon = _reorder_atoms(ribbon)
-    if no_BC:
+    if not BC:
         ribbon.set_nsc((1,1,1)) # avoid periodicity in transport direction
     # else: ribbon.set_nsc((3,1,1)) # default behavior
     return ribbon
