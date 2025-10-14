@@ -8,19 +8,28 @@ from .energies import _parse_E_range, hamiltonian, compute_dos
 # Plotting utilities
 # ---------------------------
 
-def plot_with_center(structure, **KWARGS):
+def plot_with_center(structure: (sisl.Geometry | sisl.viz.plots.GeometryPlot), **KWARGS):
     """Plot structure and highlight central hexagon + geometric center."""
     
     KWARGS.setdefault("axes", "xy")
     KWARGS.setdefault("bind_bonds_to_ats", True)
+    if isinstance(structure, sisl.viz.plots.GeometryPlot):
+        fig = structure
+        atoms_style = [structure.inputs["atoms_style"]]
+        structure = structure.inputs["geometry"]
+    
     atom_idx, hex_center = guess_hexagon_center(structure)
-    # print(f"Hexagon atom indices: {atom_idx}")
     geom_center = structure.center()
-
-    fig = structure.plot(**KWARGS)
-
+    
+    
+    if isinstance(structure, sisl.Geometry):
+        fig = structure.plot(**KWARGS)
+    
     # highlight hexagon atoms
-    fig.update_inputs(atoms_style={"color": "red", "atoms": atom_idx.tolist()})
+    atoms_style += [{"color": "blue", "atoms": atom_idx.tolist()}]
+    
+    # color atoms
+    fig.update_inputs(atoms_style=atoms_style)
 
     # add markers
     fig.add_trace(go.Scatter(
