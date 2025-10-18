@@ -62,7 +62,7 @@ def find_overlap(structure : sisl.Geometry, tol=0.1):
     return pairs
 
 @count_removals
-def delete_overlaps(structure : sisl.Geometry, pairs : set | None = None):
+def remove_overlaps(structure : sisl.Geometry, pairs : set | None = None):
     """Delete overlapping atoms from a structure."""
     if pairs is None:
         overlaps = find_overlap(structure)
@@ -147,7 +147,7 @@ def generate_structure(width=5, length=8, **kwargs):
     if overlaps:
         indexes = _init_indexes(structure)
         indexes = set_index(overlaps, indexes)
-        structure = delete_overlaps(structure)
+        structure = remove_overlaps(structure)
         return structure, indexes
     else:
         return structure, indexes
