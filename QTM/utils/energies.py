@@ -2,6 +2,7 @@ import numpy as np
 import sisl
 from ._wrappers import timeit
 from numba import njit
+from tqdm import tqdm
 
 from typing import Optional, Sequence, Tuple
 from numpy.typing import NDArray
@@ -167,7 +168,7 @@ def LDOS(G: np.ndarray) -> np.ndarray:
     ndarray
         Array of shape (N,) for the LDOS of the N atoms/sites
     """
-    return -(1/np.pi)*np.diag(G)
+    return -(1/np.pi)*np.diag(G.imag)
 
 def multi_LDOS(device: sisl.Geometry, electrode : sisl.Geometry, 
                lr_indices: tuple[np.ndarray, np.ndarray],
@@ -202,11 +203,11 @@ def multi_LDOS(device: sisl.Geometry, electrode : sisl.Geometry,
     kpts = sisl.MonkhorstPack(H_D, k_direction).k
     H_0 = hamiltonian(electrode)
     SE = RecursiveSI(H_0, infinite="+A")
-    all_LDOS = np.zeros(shape=(Nk, Ne, N_device), dtype=complex)
-    for ik, kvec in enumerate(kpts):
+    all_LDOS = np.zeros(shape=(Nk, Ne, N_device))
+    for ik, kvec in enumerate(kpts):#, desc="k vecs"):
         Hk = H_D.Hk(k=kvec, format="array", dtype=complex)
         Sk = H_D.Sk(k=kvec, format="array", dtype=complex)
-        for ie, E in enumerate(energies):
+        for ie, E in tqdm(enumerate(energies), desc="Energies", total=len(energies)):
             En = E + 1j*eta
             SE_L, SE_R = lr_energies(electrode=SE, En=En, kvec=kvec)
             Hk = add_lr_energies(Hk, (SE_L, SE_R), lr_indices)

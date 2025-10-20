@@ -1,19 +1,20 @@
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 import sisl
 import numpy as np
 from ._wrappers import timeit
-from .structure import generate_structure, make_nanoribbon
-from .energies import hamiltonian, compute_dos
+from .structure import build_electrode, build_nanoribbon, build_reduced_device
+from .energies import hamiltonian, lr_energies, add_lr_energies, LDOS, multi_LDOS
 
-from .plots import plot_DOS, plot_with_center, plot_center_pdos
+# from .plots import plot_with_center
 
 
-__all__ = ["_parse_E_range", "hamiltonian", "compute_dos", 
-           "timeit",
-           "generate_structure", "make_nanoribbon",
-           "hamiltonian", "compute_dos",
-           "__version__"
+__all__ = ["timeit",
+           "build_electrode", "build_nanoribbon", "build_reduced_device", 
+           "hamiltonian", "lr_energies", "add_lr_energies",
+           "LDOS", "multi_LDOS",
+       #     "plot_with_center",
+           "__version__",
            
     ]
 
