@@ -20,6 +20,7 @@ dependencies = [
     "seaborn>=0.13.2",
     "setuptools>=80.9.0",
     "sisl[viz]>=0.16.2",
+    "tqdm>=4.67.1",
 ]
 
 dynamic = ["version"]
