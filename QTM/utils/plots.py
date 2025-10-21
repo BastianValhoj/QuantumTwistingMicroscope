@@ -3,6 +3,7 @@ import sisl
 import numpy as np
 
 import plotly.graph_objects as go
+from warnings import warn
 
 from .structure import guess_hexagon_center, find_nearest_atoms
 # ---------------------------
@@ -36,8 +37,10 @@ def plot_with_center(structure: sisl.Geometry | sisl.viz.plots.GeometryPlot, **K
         fig = structure
         atoms_style = [structure.inputs["atoms_style"]]
         structure = structure.inputs["geometry"]
+        warn("\nThis is not implemented yet")
+        raise NotImplementedError("This does not function with plotly's scatterplot!!!! needs fix")
     elif isinstance(structure, sisl.Geometry):
-        print("input type is a Geometry")
+        # print("input type is a Geometry")
         fig = structure.plot(axes=axes, bind_bonds_to_ats=bind_bonds_to_ats)
     
     # print(f"{type(structure) = }")

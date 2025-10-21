@@ -278,7 +278,9 @@ def build_nanoribbon(electrode: sisl.Geometry,
     """
     if not isinstance(center_size, int) or center_size <= 0:
         raise ValueError("`center_size` must be a positive integer")
-    return electrode.tile(2+center_size, 0)
+    ribbon = electrode.tile(2+center_size, 0)
+    # ribbon.set_nsc((1,1,1))
+    return ribbon
 
 # ==================================
 # Build actual structure of interest
@@ -328,7 +330,7 @@ def build_reduced_device(nanoribbon: sisl.Geometry, electrode: sisl.Geometry,
     _reset_atoms(device)
     device.set_nsc((1,1,1))
     
-    return device, left_indices, right_indices
+    return device, (left_indices, right_indices)
 
 
 

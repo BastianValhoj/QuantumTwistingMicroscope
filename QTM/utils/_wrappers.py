@@ -7,14 +7,14 @@ def timeit(func):
         result = func(*args, **kwargs)
         final_time = time()
         func_args = {}
-        if (args is None) or (len(args) == 0):
-            func_args["width"] = kwargs["width"]
-            func_args["length"] = kwargs["length"]
-        else:
-            func_args["width"] = args[0]
-            func_args["length"] = args[1]
+        # if (args is None) or (len(args) == 0):
+        #     func_args["width"] = kwargs["width"]
+        #     func_args["length"] = kwargs["length"]
+        # else:
+        #     func_args["width"] = args[0]
+        #     func_args["length"] = args[1]
             
-        print(f"func '{func.__name__}' with args : {func_args}  ran in {final_time - initial_time:.3f} s")
+        print(f"func '{func.__name__}' with args : {"-not implemented-"}  ran in {final_time - initial_time:.3f} s")
         return result
     return wrapper
 
