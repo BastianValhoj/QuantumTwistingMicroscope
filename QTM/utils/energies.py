@@ -238,7 +238,7 @@ def multi_LDOS(device: 'sisl.Geometry',
     SE = RecursiveSI(H_0, infinite="+A")
     all_LDOS = np.zeros(shape=(Nk, Ne, N_device), dtype=float)
     
-    for ik, kvec in tqdm(enumerate(kpts), desc="k-points", leave=False):
+    for ik, kvec in tqdm(enumerate(kpts), desc="k-points", leave=True):
         Hk = H_D.Hk(k=kvec, format=form, dtype=complex)
         Sk = H_D.Sk(k=kvec, format=form, dtype=complex)
         
