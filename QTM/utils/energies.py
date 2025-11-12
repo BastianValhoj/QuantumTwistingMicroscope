@@ -17,8 +17,10 @@ from sisl.physics import RecursiveSI
 # import numpy as np
 from math import ceil
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from tqdm import tqdm
+from tqdm.auto import tqdm
 from scipy.sparse.linalg import splu
+from scipy.linalg import lu_factor, lu_solve
+from scipy.linalg import cho_factor, cho_solve
 from scipy.sparse import isspmatrix_csc
 from scipy.sparse import identity
 import os
@@ -188,32 +190,47 @@ def LDOS(G: np.ndarray) -> np.ndarray:
     return -(1/np.pi)*np.diag(G.imag)
 
 
-def LDOS_from_sparse(invG):
+def diagonal_of_inverse(M):
     """Compute Greens function from sparse matrix inputs.
     
     Paramters
     ---------
-    invG : ndarray (sparse)
-        Inverse of Greens function of shape (N,N)
-     block_size : int
-        Number of basis vectors to solve at once (tune this: 128-1024 typical).
+    M : ndarray (sparse)
+        Matrix to find the diag(M^(-1)) of shape (N,N)
+    
     Returns
     -------
     ndarray
-        The LDOS."""
+        The diagonal of M^(-1)."""
     
-    if not isspmatrix_csc(invG):
-        invG = invG.tocsc()
-    n = invG.shape[0]
-    
-    lu = splu(invG)
+    n = M.shape[0]
     diag = np.empty(n, dtype=complex)
     
-    I = identity(invG.shape[0], format="csc")
-    G_cols = lu.solve(I.toarray())  # solves for all e_i at once
-    diag = np.diag(G_cols)
+    if isspmatrix_csc(M):
+                
+        lu = splu(M)        
+        for i in range(n):
+            ei = np.zeros(n)
+            ei[i] = 1.0
+            xi = lu.solve(ei)
+            diag[i] = xi[i]
+        
+    elif not isspmatrix_csc(M):
+        lu, piv = lu_factor(M)
+        
+        for i in range(n):
+            ei = np.zeros(n)
+            ei[i] = 1.0
+            xi = lu_solve((lu, piv), ei)
+            diag[i] = xi[i]
+        
+    return diag
+        
+        
+    # G_cols = lu.solve(I.toarray())  # solves for all e_i at once
+    # diag = np.diag(G_cols)
     
-    return -np.imag(diag) / np.pi
+    # return diag
 
 
 
@@ -225,6 +242,7 @@ def multi_LDOS(device: 'sisl.Geometry',
                Nk: int = 1,
                eta: float = 1e-5,
                form: str = "csc") -> np.ndarray:
+    
     energies = np.asarray(energies)
     Ne = len(energies)
     k_direction = _direction(Nk=Nk, axis=1)
@@ -238,16 +256,17 @@ def multi_LDOS(device: 'sisl.Geometry',
     SE = RecursiveSI(H_0, infinite="+A")
     all_LDOS = np.zeros(shape=(Nk, Ne, N_device), dtype=float)
     
-    for ik, kvec in tqdm(enumerate(kpts), desc="k-points", leave=True):
+    for ik, kvec in enumerate(tqdm(kpts, desc="k-points")):
         Hk = H_D.Hk(k=kvec, format=form, dtype=complex)
         Sk = H_D.Sk(k=kvec, format=form, dtype=complex)
         
-        for ie, E in tqdm(enumerate(energies), desc="Energy"):
+        for ie, E in enumerate(tqdm(energies, desc="Energy")):
             En = E + 1j*eta
             SE_pair = lr_energies(electrode=SE, En=En, kvec=kvec)
             Hk_with_lr = add_lr_energies(Hk.copy(), SE_pair, lr_indices)
             invG = Sk*En - Hk_with_lr
-            all_LDOS[ik, ie, ...] = LDOS_from_sparse(invG)
+            diag_G = diagonal_of_inverse(invG)
+            all_LDOS[ik, ie, ...] = - np.imag(diag_G) / np.pi
     return all_LDOS
     
 
