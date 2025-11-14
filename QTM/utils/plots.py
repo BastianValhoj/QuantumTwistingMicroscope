@@ -26,6 +26,16 @@ def _parse_E_range(**kwargs):
     else:
         raise ValueError("E must be a number or None.")
     
+def mark_electrode(lr_indices):
+    """Helper function for plotting electrodes.
+    Colors 'left' and 'right' electrodes using blue and red respectively.
+    Scales the atom sizes to match opposing electrodes."""
+    atoms_style = []
+    for i, (l, r) in enumerate(zip(*lr_indices)):
+        atoms_style += [{"atoms": l, "size": i*0.3 + 0.3, "color": "blue"}]
+        atoms_style += [{"atoms": r, "size": i*0.3 + 0.3, "color": "red"}]
+    return atoms_style
+    
 def plot_with_center(structure: sisl.Geometry | sisl.viz.plots.GeometryPlot, **KWARGS):
     """Plot structure and highlight central hexagon + geometric center."""
     atoms_style = KWARGS.get("atoms_style", [])

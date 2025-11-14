@@ -106,22 +106,22 @@ def guess_hexagon_center(structure: sisl.Geometry) -> np.ndarray:
     distance_2_nn = 2*bond*np.cos(np.deg2rad(30)) # [Å] distance to the second nearest neighbour
     rtol = 5e-2 # tolerance for determining of values are close
     coords = get_coordinates(structure)
-    center = coords.mean(axis=0)
-    atom_idx = find_nearest_atoms(coords, center, neighbours=6)
+    geom_center = coords.mean(axis=0)
+    atom_idx = find_nearest_atoms(coords, geom_center, neighbours=6)
     hex_coords = coords[atom_idx]
-    center = hex_coords.mean(axis=0)
+    hex_center = hex_coords.mean(axis=0)
     
     atom1, atom2 = hex_coords[[0,1]]
-    if np.isclose(atom1[1], atom2[1], rtol=rtol) and np.isclose(atom1[1], center[1], rtol=rtol):
-        center += np.array([0, distance_2_nn/2, 0])  # shift the center by half the distance to the 2nd NN
-        warn_string = f"""
-        Warning: The geometric center lies on bonds. Trying to shift the center by half atomc distance to 2. NN.
-        {'Atom 1':>20}: {atom1}
-        {'Atom 2':>20}: {atom2}
-        {'New Center':>20}: {center}
-        """
+    if np.isclose(atom1[1], atom2[1], rtol=rtol) and np.isclose(atom1[1], hex_center[1], rtol=rtol):
+        hex_center += np.array([0, distance_2_nn/2, 0])  # shift the center by half the distance to the 2nd NN
+        warn_string = "\n" \
+        "### Warning: The geometric center lies on bonds." \
+        "### Trying to shift the center by half atomc distance to 2. NN." \
+        f"### {'Atom 1':>20}: {atom1}" \
+        f"### {'Atom 2':>20}: {atom2}" \
+        f"### {'New Center':>20}: {hex_center}" 
         warn(warn_string)
-    return center
+    return hex_center
 
 # ================================================
 # Helper functions for determining electrode atoms

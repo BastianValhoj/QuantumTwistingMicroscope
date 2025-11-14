@@ -1,5 +1,6 @@
 from time import time
 
+
 def timeit(func):
     """Decorator to time function call."""
     def wrapper(*args, **kwargs):
@@ -13,8 +14,10 @@ def timeit(func):
         # else:
         #     func_args["width"] = args[0]
         #     func_args["length"] = args[1]
-            
-        print(f"func '{func.__name__}' with args : {"-not implemented-"}  ran in {final_time - initial_time:.3f} s")
+        time_diff = abs(final_time - initial_time)
+        hours, rem = divmod(time_diff, 60*60)
+        minutes, seconds = divmod(rem, 60)
+        print(f"func '{func.__name__}' with args : {"-not implemented-"}  ran in {hours:02}:{minutes:02}:{seconds:05.3f}")
         return result
     return wrapper
 
