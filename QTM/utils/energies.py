@@ -264,7 +264,7 @@ def multi_LDOS(device: 'sisl.Geometry',
             En = E + 1j*eta
             SE_pair = lr_energies(electrode=SE, En=En, kvec=kvec)
             Hk_with_lr = add_lr_energies(Hk.copy(), SE_pair, lr_indices)
-            invG = Sk*En - Hk_with_lr
+            invG = Sk*En - Hk_with_lr 
             diag_G = diagonal_of_inverse(invG)
             all_LDOS[ik, ie, ...] = - np.imag(diag_G) / np.pi
     return all_LDOS
