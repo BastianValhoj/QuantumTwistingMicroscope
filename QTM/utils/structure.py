@@ -100,27 +100,35 @@ def guess_hexagon_center(structure: sisl.Geometry) -> np.ndarray:
     Returns
     -------
     ndarray of shape (3,)
-        xyz coordinates of center
+        xyz coordinates of center for central (rotation) hexagon
     """
     bond = 1.42 # [Å] distance to nearest neighbour
-    distance_2_nn = 2*bond*np.cos(np.deg2rad(30)) # [Å] distance to the second nearest neighbour
-    rtol = 5e-2 # tolerance for determining of values are close
+    # distance_2_nn = 2*bond*np.cos(np.deg2rad(30)) # [Å] distance to the second nearest neighbour
+    dy = bond*np.cos(np.deg2rad(30)) # [Å] half distance to the second nearest neighbour
+    atol = 5e-2 # tolerance for determining of values are close
     coords = get_coordinates(structure)
     geom_center = coords.mean(axis=0)
     atom_idx = find_nearest_atoms(coords, geom_center, neighbours=6)
     hex_coords = coords[atom_idx]
     hex_center = hex_coords.mean(axis=0)
     
-    atom1, atom2 = hex_coords[[0,1]]
-    if np.isclose(atom1[1], atom2[1], rtol=rtol) and np.isclose(atom1[1], hex_center[1], rtol=rtol):
-        hex_center += np.array([0, distance_2_nn/2, 0])  # shift the center by half the distance to the 2nd NN
+    dist_to_atoms = np.linalg.norm(hex_coords - hex_center[None, :], axis=1) # proposed hex center distance to corresponding hex atoms
+    # check if hex center (the rotation center) is different from the geom center,
+    # or if hex center distance is not bond length (should be for hexagon geometry)
+    if not np.all(np.isclose(hex_center, geom_center, atol=atol)) or not np.all(np.isclose(dist_to_atoms, bond, atol=atol)):
+        hex_center += np.array([0, dy, 0]) # make a slight shift in y to find new hex 
         warn_string = "\n" \
-        "### Warning: The geometric center lies on bonds." \
-        "### Trying to shift the center by half atomc distance to 2. NN." \
-        f"### {'Atom 1':>20}: {atom1}" \
-        f"### {'Atom 2':>20}: {atom2}" \
-        f"### {'New Center':>20}: {hex_center}" 
+        "### Warning: The center of ration is on the bond between atoms.\n" \
+        f"### {'Hex Center':>20}: {hex_center}\n" \
+        # f"### {'Geometric Center':>20}: {geom_center}"
+        f"### adding shift in y {dy = } and find new hex center"
         warn(warn_string)
+        
+        # use the shifted hex_center to find new hex_center
+        atom_idx = find_nearest_atoms(coords, hex_center, neighbours=6)
+        hex_coords = coords[atom_idx]
+        hex_center.mean(axis=0)
+    
     return hex_center
 
 # ================================================

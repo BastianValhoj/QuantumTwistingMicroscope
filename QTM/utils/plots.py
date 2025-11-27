@@ -37,7 +37,12 @@ def mark_electrode(lr_indices):
     return atoms_style
     
 def plot_with_center(structure: sisl.Geometry | sisl.viz.plots.GeometryPlot, **KWARGS):
-    """Plot structure and highlight central hexagon + geometric center."""
+    """Plot structure and highlight central hexagon + geometric center. 
+    
+    Note
+    ---
+    Only intended for plotting nanoribbon. For reduced graphene structure, the *plotted* rotation center is not guaranteed correct.
+    """
     atoms_style = KWARGS.get("atoms_style", [])
     axes = KWARGS.get("axes", "xy")
     bind_bonds_to_ats = KWARGS.get("bind_bonds_to_ats", True)
