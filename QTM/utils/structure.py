@@ -185,6 +185,56 @@ def find_electrode_indices(device: sisl.Geometry, num_electrodes: int) -> tuple[
         lefts.append(idx_N[i*NN:(i+1)*NN])
         rights.append(idx_O[i*NO:(i+1)*NO])
     return np.array(lefts), np.array(rights)
+
+# ==================================
+# Overlap identification and removal
+# ==================================
+def infer_centersize(l, i):
+    """Given L and a starting i, find the smallest `i' >=  i` such that `C = 2*(1+i)/l` is a positive integer.
+    
+    Parameters
+    ---
+    L : int
+        The integer for the length of electrode
+    i : int
+        determine width by `W = 5+4*i
+    Returns
+    ---
+    tuple : (L, W, C)
+    """
+    if (not isinstance(l, int)) or (not isinstance(i, int)):
+        raise TypeError("l and i must be integer")
+    if l < 1:
+        raise ValueError("l must be at least 1")
+    if i < 0:
+        raise ValueError("i must be non-negative")
+    
+    # we want  L | (2*(i+1))  meaning 2(1+i) is divisible by L yielding an integer.
+    # ("|" means that for an integer k: 2*(i+1) = kL)
+    
+    # so 2*(1+i) = 0 mod L -> i = -1 mod (L/gcd(L, 2))
+    import math
+    g = math.gcd(l, 2)
+    spacing = l // g # modulus for i
+    
+    # solve for i = -1 (mod s), but Python want positives
+    target = (-1) % spacing
+    
+    # print(f"{spacing = }")
+    # print(f"{target = }")
+    # print(f"{i = }")
+    # print(f"{target - i = }")
+    # print(f"{-1 % spacing = }")
+    # print(f"{(target-i)%spacing = }")
+    if i <= target:
+        i = target
+    else:
+        print(f"{(l, i) = } are incompatbile. Increasing i.")
+        i = i + ((target - i) % spacing)
+    
+    w = 5 + i*4
+    c = 2*(1+i)//l # integer
+    return l, w, c
     
 # ==================================
 # Overlap identification and removal
