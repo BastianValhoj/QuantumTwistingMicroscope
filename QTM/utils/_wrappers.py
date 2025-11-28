@@ -7,7 +7,11 @@ def timeit(func):
         initial_time = time()
         result = func(*args, **kwargs)
         final_time = time()
-        func_args = {}
+        # func_args = {}
+        arg_str = ", ".join([
+            *(repr(a) for a in args),
+            *(f"{k}={v!r}" for k, v in kwargs.items())
+        ]) or "-"
         # if (args is None) or (len(args) == 0):
         #     func_args["width"] = kwargs["width"]
         #     func_args["length"] = kwargs["length"]
@@ -17,7 +21,8 @@ def timeit(func):
         time_diff = abs(final_time - initial_time)
         hours, rem = divmod(time_diff, 60*60)
         minutes, seconds = divmod(rem, 60)
-        print(f"func '{func.__name__}' with args : {"-not implemented-"}  ran in {hours:02}:{minutes:02}:{seconds:05.3f}")
+        hours, minutes = int(hours), int(minutes)
+        print(f"func '{func.__name__}'({arg_str})  ran in {hours:02d}:{minutes:02d}:{seconds:05.3f}")
         return result
     return wrapper
 
