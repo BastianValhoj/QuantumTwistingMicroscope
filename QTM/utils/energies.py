@@ -57,7 +57,8 @@ def _direction(Nk: int = 1, axis: int = 1) -> list[int]:
     return d
 
 def hamiltonian(structure: sisl.Geometry, 
-                *, r=(0, 1.44), t=(0.0, -2.7), finalize: bool = False) -> sisl.Hamiltonian:
+                *, r=(0, 1.44), t=(0.0, -2.7),
+                dtype=complex, finalize: bool = False) -> sisl.Hamiltonian:
     """Create a tight-binding Hamiltonian for a given structure.
 
     Parameters
@@ -76,7 +77,7 @@ def hamiltonian(structure: sisl.Geometry,
     Hamiltonian
         The constructed Hamiltonian
     """
-    H = sisl.Hamiltonian(structure)
+    H = sisl.Hamiltonian(structure, dtype=dtype)
     H.construct([r, t])
     if finalize:
         H.finalize() # make hamiltonian sparse
