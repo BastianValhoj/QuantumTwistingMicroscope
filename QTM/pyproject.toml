@@ -16,6 +16,7 @@ dependencies = [
     "numba>=0.61.2",
     "numpy>=2.2.6",
     "pandas>=2.3.2",
+    "pyaml>=25.7.0",
     "scipy>=1.16.1",
     "seaborn>=0.13.2",
     "setuptools>=80.9.0",
