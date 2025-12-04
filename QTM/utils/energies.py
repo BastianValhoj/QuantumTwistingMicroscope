@@ -25,6 +25,17 @@ from scipy.sparse import isspmatrix_csc
 from scipy.sparse import identity
 import os
 
+from .helpers import in_notebook
+
+
+if in_notebook():
+    from tqdm.notebook import tqdm
+    TQDM_KWARGS = dict(leave=True)
+else:
+    from tqdm import tqdm
+    TQDM_KWARGS = dict(leave=False)
+
+
 # ====================================
 # Helper function for parsing k-points
 # ====================================
@@ -234,7 +245,53 @@ def diagonal_of_inverse(M):
     # return diag
 
 
+# def multi_LDOS(device: 'sisl.Geometry',
+#                electrode: 'sisl.Geometry',
+#                lr_indices: tuple[np.ndarray, np.ndarray],
+#                *,
+#                energies: np.ndarray | list = [0.0],
+#                Nk: int = 1,
+#                eta: float = 1e-5,
+#                form: str = "csc") -> np.ndarray:
+    
+#     energies = np.asarray(energies)
+#     Ne = len(energies)
+#     k_direction = _direction(Nk=Nk, axis=1)
+    
+#     H_D = hamiltonian(device)
+#     H_D.set_nsc((1,1,1))
+#     N_device = len(device)
+#     kpts = sisl.MonkhorstPack(H_D, k_direction).k
+    
+#     H_0 = hamiltonian(electrode)
+#     SE = RecursiveSI(H_0, infinite="+A")
+#     all_LDOS = np.zeros(shape=(Nk, Ne, N_device), dtype=float)
+    
+#     for ik, kvec in enumerate(tqdm(kpts, desc="k-points")):
+#         Hk = H_D.Hk(k=kvec, format=form, dtype=complex)
+#         Sk = H_D.Sk(k=kvec, format=form, dtype=complex)
+        
+#         for ie, E in enumerate(tqdm(energies, desc="Energy")):
+#             En = E + 1j*eta
+#             SE_pair = lr_energies(electrode=SE, En=En, kvec=kvec)
+#             Hk_with_lr = add_lr_energies(Hk.copy(), SE_pair, lr_indices)
+#             invG = Sk*En - Hk_with_lr 
+#             diag_G = diagonal_of_inverse(invG)
+#             all_LDOS[ik, ie, ...] = - np.imag(diag_G) / np.pi
+#     return all_LDOS
 
+def make_scaling_matrix(ldos0):
+    """Create the matrix for E=0 
+    used for modulating/scaling the self-energies for a range of energies
+
+    Parameters
+    ----------
+    ldos0 : np.ndarray
+        A array of LDOS for E=0, shape = (Na,) for Na atoms.
+    """
+    D = np.sqrt(ldos0) # shape (Na)
+    return D[:, None] * D[None, :] # shape (Na, Na)
+    
 def multi_LDOS(device: 'sisl.Geometry',
                electrode: 'sisl.Geometry',
                lr_indices: tuple[np.ndarray, np.ndarray],
@@ -242,33 +299,81 @@ def multi_LDOS(device: 'sisl.Geometry',
                energies: np.ndarray | list = [0.0],
                Nk: int = 1,
                eta: float = 1e-5,
-               form: str = "csc") -> np.ndarray:
+               form: str = "csc",
+               modulate_SE: float | None = None) -> np.ndarray:
     
-    energies = np.asarray(energies)
-    Ne = len(energies)
-    k_direction = _direction(Nk=Nk, axis=1)
+    
+    """Compute LDOS.
+    if modulate_SE is a float, self-energies are modulated with 
+    `Sigma_{L/R} + i*LDOS(E=0)*modulate_SE.
+    
+    Paramters
+    ---
+    modulate_SE : float or None
+        - None -> No modulation (original behavior)
+        - float -> modulation strength C
+
+
+    Returns
+    -------
+    LDOS : ndarray of shape (Nk, NE, Na)
+        The Ldos for the number of k points, energies and atoms/sites: Nk, NE, Na, respectively.
+    """
+    energies = np.asarray(energies) # ensure energies is a ndarray
+    Ne = len(energies) # number of energies
+    k_direction = [1, Nk, 1] # direction to sample k
     
     H_D = hamiltonian(device)
-    H_D.set_nsc((1,1,1))
-    N_device = len(device)
+    H_D.set_nsc([1,1,1])
+    Na = len(device) # number of atoms
     kpts = sisl.MonkhorstPack(H_D, k_direction).k
     
     H_0 = hamiltonian(electrode)
     SE = RecursiveSI(H_0, infinite="+A")
-    all_LDOS = np.zeros(shape=(Nk, Ne, N_device), dtype=float)
     
-    for ik, kvec in enumerate(tqdm(kpts, desc="k-points")):
+    # Precompute LDOS(E=0) if needed
+    if modulate_SE is not None:
+        C = float(modulate_SE)    
+        LDOS_E0 = np.zeros((Nk, Na), dtype=complex)
+        E0 = 0.0 + 1j*eta
+        
+        for ik, kvec, in enumerate(tqdm(kpts, desc="LDOS E=0", **TQDM_KWARGS)):
+            Hk = H_D.Hk(k=kvec, format=form, dtype=complex)
+            Sk = H_D.Sk(k=kvec, format=form, dtype=complex)
+            
+            SE_pair = lr_energies(electrode=SE, En=E0, kvec=kvec)
+            Hk_lr = add_lr_energies(Hk.copy(), SE_pair, lr_indices)
+            
+            invG = Sk*E0 - Hk_lr
+            diagG = diagonal_of_inverse(invG)
+            LDOS_E0[ik, :] = - np.imag(diagG) / np.pi
+    
+    # Compute all LDSO (optionally modulated)
+    all_ldos = np.zeros(shape=(Nk, Ne, Na), dtype=float)
+    for ik, kvec in enumerate(tqdm(kpts, desc="kvecs", **TQDM_KWARGS)):
         Hk = H_D.Hk(k=kvec, format=form, dtype=complex)
         Sk = H_D.Sk(k=kvec, format=form, dtype=complex)
         
-        for ie, E in enumerate(tqdm(energies, desc="Energy")):
+        if modulate_SE is not None:
+            scale = make_scaling_matrix(LDOS_E0[ik, :]) * C
+            
+        for ie, E in enumerate(tqdm(energies, desc=f"Energy for ik={ik}", **TQDM_KWARGS)):
             En = E + 1j*eta
-            SE_pair = lr_energies(electrode=SE, En=En, kvec=kvec)
-            Hk_with_lr = add_lr_energies(Hk.copy(), SE_pair, lr_indices)
-            invG = Sk*En - Hk_with_lr 
-            diag_G = diagonal_of_inverse(invG)
-            all_LDOS[ik, ie, ...] = - np.imag(diag_G) / np.pi
-    return all_LDOS
+            
+            SigmaL, SigmaR = lr_energies(electrode=SE, En=En, kvec=kvec)
+            if modulate_SE is not None:
+                NL, _ = SigmaL.shape
+                NR, _ = SigmaR.shape
+                SigmaL = SigmaL + 1j*scale[:NL, :NL]
+                SigmaR = SigmaR + 1j*scale[-NR:, -NR:]
+            
+            Hk_lr = add_lr_energies(Hk.copy(), (SigmaL, SigmaR), lr_indices)
+            invG  = Sk*En - Hk_lr
+            diagG = diagonal_of_inverse(invG)
+            all_ldos[ik, ie, :] = -np.imag(diagG) / np.pi
+            
+    
+    return all_ldos
     
 
 
@@ -328,6 +433,7 @@ def multi_LDOS_parallel(device, electrode, lr_indices, *,
     """
     Clean parallel-over-energies LDOS. Deterministic and easier to debug.
     """
+    raise NotImplementedError("This function is not working as intended, needs to verify the output before continued work")
     if n_workers is None:
         n_workers = max(1, (os.cpu_count() or 2) - 1)
 

@@ -4,8 +4,9 @@ import sisl
 import numpy as np
 from ._wrappers import timeit
 from .structure import build_electrode, build_nanoribbon, build_reduced_device
-from .energies import hamiltonian, lr_energies, add_lr_energies, LDOS, multi_LDOS_parallel
+from .energies import hamiltonian, lr_energies, add_lr_energies, LDOS
 from .loader import path_finder, load_datastructure
+from .helpers import in_notebook
 # from .energies import multi_LDOS_parallel as multi_ldos
 
 # from .plots import plot_with_center
@@ -16,10 +17,13 @@ __all__ = ["timeit",
            "hamiltonian", "lr_energies", "add_lr_energies",
            "LDOS", "multi_ldos_parallel",
            "path_finder", "load_datastructure"
+           "in_notebook",
        #     "plot_with_center",
            "__version__",
            
     ]
+
+
 
 def pretty_print_columns(A, decimals=2, zero_repr="0"):
     """

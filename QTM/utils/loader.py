@@ -39,7 +39,7 @@ def load_datastructure(LWC=(1,5,2)) -> tuple:
     PROJECT_ROOT = path_finder(folder="QTM")
     results_folder = PROJECT_ROOT / "results"
     l, w, c = LWC
-    params_path = results_folder / f"L{l}_W{w}_C{c}"
+    params_path = results_folder / f"L{l}_W{w:02}_C{c:02}"
     DATA = np.load(f"{params_path}/calculations.npz")
     # print(DATA.keys())
     electrode = get_sile(f"{params_path}/electrode.xyz").read_geometry()

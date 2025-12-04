@@ -5,9 +5,13 @@ from scipy.spatial import cKDTree
 
 # custom imports
 from ._wrappers import count_removals
+from .helpers import in_notebook
 
 # debugging
 from warnings import warn
+
+
+from tqdm.auto import tqdm
 
 # ---------------------------
 # Geometry helper functions
@@ -219,17 +223,11 @@ def infer_centersize(l, i):
     
     # solve for i = -1 (mod s), but Python want positives
     target = (-1) % spacing
-    
-    # print(f"{spacing = }")
-    # print(f"{target = }")
-    # print(f"{i = }")
-    # print(f"{target - i = }")
-    # print(f"{-1 % spacing = }")
-    # print(f"{(target-i)%spacing = }")
     if i <= target:
         i = target
     else:
-        print(f"{(l, i) = } are incompatbile. Increasing i.")
+        if in_notebook():
+            tqdm.write(f"{(l, i) = } are incompatbile. Increasing i.")
         i = i + ((target - i) % spacing)
     
     w = 5 + i*4

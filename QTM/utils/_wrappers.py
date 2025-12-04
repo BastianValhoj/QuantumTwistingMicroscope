@@ -1,5 +1,8 @@
 from time import time
 
+# from utils import in_notebook
+
+from tqdm.auto import tqdm
 
 def timeit(func):
     """Decorator to time function call."""
@@ -12,12 +15,6 @@ def timeit(func):
             *(repr(a) for a in args),
             *(f"{k}={v!r}" for k, v in kwargs.items())
         ]) or "-"
-        # if (args is None) or (len(args) == 0):
-        #     func_args["width"] = kwargs["width"]
-        #     func_args["length"] = kwargs["length"]
-        # else:
-        #     func_args["width"] = args[0]
-        #     func_args["length"] = args[1]
         time_diff = abs(final_time - initial_time)
         hours, rem = divmod(time_diff, 60*60)
         minutes, seconds = divmod(rem, 60)
@@ -32,7 +29,7 @@ def count_removals(func):
         initial_count = len(args[0])
         result = func(*args, **kwargs)
         final_count = len(result)
-        print(f"       Initial number of atoms: {initial_count}")
-        print(f" Atoms after removing overlaps: {final_count}")
+        tqdm.write(f"       Initial number of atoms: {initial_count}")
+        tqdm.write(f" Atoms after removing overlaps: {final_count}")
         return result
     return wrapper
