@@ -11,7 +11,7 @@ from pathlib import Path
 from itertools import product
 
 Nk = 1
-ENERGIES = np.linspace(-2, 2, num=50)
+ENERGIES = np.linspace(-2, 2, num=100)
 C_PARMS = [None, 0.05, 0.5, 1, 5, 10, 20]
 
 # directory where this script lives
@@ -78,7 +78,7 @@ def main(LWC_combinations):
 
 if __name__ == "__main__":
     Llist = range(1,3)
-    ilist = range(0,6)
+    ilist = range(0,8)
     all_inputs = product(Llist, ilist)
     unique_combinations = set(infer_centersize(l, i) for l, i in all_inputs)
     
