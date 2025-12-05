@@ -2,6 +2,7 @@ from pathlib import Path
 from sisl.io import get_sile
 import numpy as np
 
+from tqdm.auto import tqdm
 
 
 def path_finder(folder="QTM") -> Path:
@@ -13,7 +14,7 @@ def path_finder(folder="QTM") -> Path:
         if parent.name == folder:
             return parent
 
-def load_datastructure(LWC=(1,5,2)) -> tuple:
+def load_datastructure(LWC=(1,5,2), *, verbose=False) -> tuple:
     """Load data from folder with parameters L, W, C
 
     Parameters
@@ -41,11 +42,10 @@ def load_datastructure(LWC=(1,5,2)) -> tuple:
     l, w, c = LWC
     params_path = results_folder / f"L{l}_W{w:02}_C{c:02}"
     DATA = np.load(f"{params_path}/calculations.npz")
-    # print(DATA.keys())
     electrode = get_sile(f"{params_path}/electrode.xyz").read_geometry()
     ribbon = get_sile(f"{params_path}/ribbon.xyz").read_geometry()
     device = get_sile(f"{params_path}/device.xyz").read_geometry()
-    # energies, ldos, lr_idx = DATA["energies"], DATA["ldos"], DATA["lr_idx"]
-    print(f"params : (L, W, C) = {LWC}")
+    if verbose:
+        tqdm.write(f"params : (L, W, C) = {LWC}")
     return electrode, ribbon, device, DATA
     

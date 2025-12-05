@@ -90,7 +90,10 @@ def find_nearest_atoms(coords: np.ndarray, point: np.ndarray,
     """
     
     distances = np.linalg.norm(coords - point, axis=1)
-    return np.argsort(distances)[:neighbours]
+    output = np.argsort(distances)[:neighbours]
+    if len(output) == 1:
+        output = output[0]
+    return output
 
 def guess_hexagon_center(structure: sisl.Geometry) -> np.ndarray:
     """For use for determining center of rotation. 
