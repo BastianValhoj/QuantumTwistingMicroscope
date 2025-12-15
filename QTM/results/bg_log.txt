@@ -1,0 +1,17 @@
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L2_W33_C08/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L1_W05_C02/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L1_W09_C04/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L1_W13_C06/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L1_W17_C08/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L1_W21_C10/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L1_W25_C12/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L1_W29_C14/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L1_W33_C16/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L2_W05_C01/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L2_W09_C02/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L2_W13_C03/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L2_W17_C04/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L2_W21_C05/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L2_W25_C06/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L2_W29_C07/bandgap_calc
+save bg calc to /home/bastian/projects/QuantumTwistingMicroscope/QTM/results/L2_W33_C08/bandgap_calc
