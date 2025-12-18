@@ -204,7 +204,7 @@ def infer_centersize(l, i):
     L : int
         The integer for the length of electrode
     i : int
-        determine width by `W = 5+4*i
+        determine width by `W = 5+4*i`
     Returns
     ---
     tuple : (L, W, C)
@@ -225,13 +225,13 @@ def infer_centersize(l, i):
     spacing = l // g # modulus for i
     
     # solve for i = -1 (mod s), but Python want positives
-    target = (-1) % spacing
-    if i <= target:
+    target = (-1) % spacing # the smallest non-negative integer satisfying the modular equation
+    if i <= target: # if i is too small, just set to target
         i = target
-    else:
-        if in_notebook():
-            tqdm.write(f"{(l, i) = } are incompatbile. Increasing i.")
-        i = i + ((target - i) % spacing)
+    else: # increase i to next compatible value
+        # if in_notebook():
+        #     tqdm.write(f"{(l, i) = } are incompatbile. Increasing i.")
+        i = i + ((target - i) % spacing) 
     
     w = 5 + i*4
     c = 2*(1+i)//l # integer

@@ -68,7 +68,7 @@ def mark_electrode(lr_indices, scale_func=None):
                          "expected (2, K, N) or a tuple of two arrays")
         
     if scale_func is None:
-        scale_func = lambda x: 0.3*(1 + x)
+        scale_func = lambda x: 0.1*x + 0.5
     _, num_ribbons, _ = lr.shape
     
     atoms_style = []

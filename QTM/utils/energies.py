@@ -2,30 +2,26 @@ import numpy as np
 import sisl
 from ._wrappers import timeit
 from numba import njit
-# from tqdm import tqdm
 
-from typing import Sequence, Tuple
-# from numpy.typing import NDArray
-# from sisl.typing import GeometryLike
+from typing import Iterable, Sequence, Tuple
 
 from sisl.physics import RecursiveSI
 
-# from scipy.sparse.linalg import splu
-# from scipy.sparse import isspmatrix_csc
-
-# GPT parallelization
-# import numpy as np
 from math import ceil
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm.auto import tqdm
 from scipy.sparse.linalg import splu
 from scipy.linalg import lu_factor, lu_solve
-from scipy.linalg import cho_factor, cho_solve
+# from scipy.linalg import cho_factor, cho_solve
 from scipy.sparse import isspmatrix_csc
-from scipy.sparse import identity
+from scipy.sparse import identity as sparse_identity
+
+# for parallelization -- not yet implemented
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 
+# Local imports
 from .helpers import in_notebook
+from .structure import find_nearest_atoms
 
 
 if in_notebook():
@@ -202,13 +198,17 @@ def LDOS(G: np.ndarray) -> np.ndarray:
     return -(1/np.pi)*np.diag(G.imag)
 
 
-def diagonal_of_inverse(M):
+def diagonal_of_inverse(M, sites: Iterable[int] | None = None) -> np.ndarray:
     """Compute Greens function from sparse matrix inputs.
     
     Paramters
     ---------
     M : ndarray (sparse)
-        Matrix to find the diag(M^(-1)) of shape (N,N)
+        Matrix to find the diag(M^(-1)) of shape *(N,N)*
+    num_sites : int or None
+        If not None, only compute the center most `num_sites` elements of the diagonal.
+        Reduce *N* solves to `num_sites` solves. Relevant for very large systems where only
+        a subset of sites are needed.
     
     Returns
     -------
@@ -216,69 +216,31 @@ def diagonal_of_inverse(M):
         The diagonal of M^(-1)."""
     
     n = M.shape[0]
-    diag = np.empty(n, dtype=complex)
-    
-    if isspmatrix_csc(M):
-                
+    if (sites is None): # compute full diagonal
+        sites = np.arange(n)
+    if (not np.all(0 <= (sites) & (sites < n))):
+        raise ValueError("'sites' must be None or list of integers within [0, N).")    
+    diag = np.empty(len(sites), dtype=complex) # diagonal elements
+
+    if isspmatrix_csc(M): 
         lu = splu(M)        
-        for i in range(n):
+        for i, idx in enumerate(tqdm(sites, desc="Sparse diagonal solves", **TQDM_KWARGS)):
             ei = np.zeros(n)
-            ei[i] = 1.0
+            ei[idx] = 1.0
             xi = lu.solve(ei)
-            diag[i] = xi[i]
+            diag[i] = xi[idx]
         
     elif not isspmatrix_csc(M):
         lu, piv = lu_factor(M)
         
-        for i in range(n):
+        for i, idx in enumerate(tqdm(sites, desc="Dense diagonal solves", **TQDM_KWARGS)):
             ei = np.zeros(n)
-            ei[i] = 1.0
+            ei[idx] = 1.0
             xi = lu_solve((lu, piv), ei)
-            diag[i] = xi[i]
+            diag[i] = xi[idx]
         
     return diag
         
-        
-    # G_cols = lu.solve(I.toarray())  # solves for all e_i at once
-    # diag = np.diag(G_cols)
-    
-    # return diag
-
-
-# def multi_LDOS(device: 'sisl.Geometry',
-#                electrode: 'sisl.Geometry',
-#                lr_indices: tuple[np.ndarray, np.ndarray],
-#                *,
-#                energies: np.ndarray | list = [0.0],
-#                Nk: int = 1,
-#                eta: float = 1e-5,
-#                form: str = "csc") -> np.ndarray:
-    
-#     energies = np.asarray(energies)
-#     Ne = len(energies)
-#     k_direction = _direction(Nk=Nk, axis=1)
-    
-#     H_D = hamiltonian(device)
-#     H_D.set_nsc((1,1,1))
-#     N_device = len(device)
-#     kpts = sisl.MonkhorstPack(H_D, k_direction).k
-    
-#     H_0 = hamiltonian(electrode)
-#     SE = RecursiveSI(H_0, infinite="+A")
-#     all_LDOS = np.zeros(shape=(Nk, Ne, N_device), dtype=float)
-    
-#     for ik, kvec in enumerate(tqdm(kpts, desc="k-points")):
-#         Hk = H_D.Hk(k=kvec, format=form, dtype=complex)
-#         Sk = H_D.Sk(k=kvec, format=form, dtype=complex)
-        
-#         for ie, E in enumerate(tqdm(energies, desc="Energy")):
-#             En = E + 1j*eta
-#             SE_pair = lr_energies(electrode=SE, En=En, kvec=kvec)
-#             Hk_with_lr = add_lr_energies(Hk.copy(), SE_pair, lr_indices)
-#             invG = Sk*En - Hk_with_lr 
-#             diag_G = diagonal_of_inverse(invG)
-#             all_LDOS[ik, ie, ...] = - np.imag(diag_G) / np.pi
-#     return all_LDOS
 
 def make_scaling_matrix(ldos0):
     """Create the matrix for E=0 
@@ -300,7 +262,9 @@ def multi_LDOS(device: 'sisl.Geometry',
                Nk: int = 1,
                eta: float = 1e-5,
                form: str = "csc",
-               modulate_SE: float | None = None) -> np.ndarray:
+               modulate_SE: float | None = None,
+               LDOS_E0: np.ndarray | None = None,
+               sites: Iterable[int] | None = None) -> np.ndarray:
     
     
     """Compute LDOS.
@@ -319,35 +283,45 @@ def multi_LDOS(device: 'sisl.Geometry',
     LDOS : ndarray of shape (Nk, NE, Na)
         The Ldos for the number of k points, energies and atoms/sites: Nk, NE, Na, respectively.
     """
+    Na = len(device) # number of atoms
     energies = np.asarray(energies) # ensure energies is a ndarray
     Ne = len(energies) # number of energies
     k_direction = [1, Nk, 1] # direction to sample k
     
+    # Determine sites to compute LDOS for
+    if sites is not None:
+        if (not np.all(0 <= (sites) & (sites < Na))): # compute for subset of sites
+            raise ValueError("'sites' must be None or list of integers within [0, Na).")    
+    
+    
     H_D = hamiltonian(device)
     H_D.set_nsc([1,1,1])
-    Na = len(device) # number of atoms
+    
+    
     kpts = sisl.MonkhorstPack(H_D, k_direction).k
     
     H_0 = hamiltonian(electrode)
     SE = RecursiveSI(H_0, infinite="+A")
     
     # Precompute LDOS(E=0) if needed
-    if modulate_SE is not None:
-        C = float(modulate_SE)    
-        LDOS_E0 = np.zeros((Nk, Na), dtype=complex)
-        E0 = 0.0 + 1j*eta
-        
-        for ik, kvec, in enumerate(tqdm(kpts, desc="LDOS E=0", **TQDM_KWARGS)):
-            Hk = H_D.Hk(k=kvec, format=form, dtype=complex)
-            Sk = H_D.Sk(k=kvec, format=form, dtype=complex)
+    if modulate_SE is not None: # 
+        C = float(modulate_SE) # ensure float
+        if LDOS_E0 is None: # compute LDOS at E=0
+            LDOS_E0 = np.zeros((Nk, Na), dtype=complex)
+            E0 = 0.0 + 1j*eta
             
-            SE_pair = lr_energies(electrode=SE, En=E0, kvec=kvec)
-            Hk_lr = add_lr_energies(Hk.copy(), SE_pair, lr_indices)
-            
-            invG = Sk*E0 - Hk_lr
-            diagG = diagonal_of_inverse(invG)
-            LDOS_E0[ik, :] = - np.imag(diagG) / np.pi
-    
+            for ik, kvec, in enumerate(tqdm(kpts, desc="LDOS E=0", **TQDM_KWARGS)):
+                Hk = H_D.Hk(k=kvec, format=form, dtype=complex)
+                Sk = H_D.Sk(k=kvec, format=form, dtype=complex)
+                
+                SE_pair = lr_energies(electrode=SE, En=E0, kvec=kvec)
+                Hk_lr = add_lr_energies(Hk.copy(), SE_pair, lr_indices)
+                
+                invG = Sk*E0 - Hk_lr
+                diagG = diagonal_of_inverse(invG, sites=None) # always compute full diag for E=0
+                LDOS_E0[ik, :] = - np.imag(diagG) / np.pi
+    if (sites is not None): # override number of sites if only considering subset
+        Na = len(sites)
     # Compute all LDSO (optionally modulated)
     all_ldos = np.zeros(shape=(Nk, Ne, Na), dtype=float)
     for ik, kvec in enumerate(tqdm(kpts, desc="kvecs", **TQDM_KWARGS)):
@@ -369,15 +343,20 @@ def multi_LDOS(device: 'sisl.Geometry',
             
             Hk_lr = add_lr_energies(Hk.copy(), (SigmaL, SigmaR), lr_indices)
             invG  = Sk*En - Hk_lr
-            diagG = diagonal_of_inverse(invG)
+            diagG = diagonal_of_inverse(invG, sites=sites) # compute only needed sites if specified
             all_ldos[ik, ie, :] = -np.imag(diagG) / np.pi
             
-    
-    return all_ldos
+    if in_notebook():
+        print("remember that output is now a tuple `all_ldos, LDOS_E0`")
+    # if LDOS_E0 is None:
+    #     return all_ldos, None
+    # else:
+    return all_ldos, LDOS_E0
     
 
 
 ################ PARALLELIZE ########################
+#### Not yet implemented / verified ####
 # -------------------------
 # Helper: diagonal via block solves
 # -------------------------
@@ -386,6 +365,7 @@ def diag_of_inverse_sparse(invG_csc, block_size: int = 256) -> np.ndarray:
     Compute diagonal of G = inv(invG_csc) without forming full inverse.
     Uses SuperLU factorization + block solves.
     """
+    raise NotImplementedError("This function is not working as intended, needs to verify the output before continued work")
     if not isspmatrix_csc(invG_csc):
         invG_csc = invG_csc.tocsc()
 
@@ -414,6 +394,7 @@ def diag_of_inverse_sparse(invG_csc, block_size: int = 256) -> np.ndarray:
 # Worker: compute LDOS for one energy (called from threads)
 # -------------------------
 def _compute_ldos_with_precomputed_SE(E, Hk, Sk, SE_pair, lr_indices, eta, block_size):
+    raise NotImplementedError("This function is not working as intended, needs to verify the output before continued work")
     En = E + 1j * eta
     SE_L, SE_R = SE_pair
     Hk_with_lr = add_lr_energies(Hk.copy(), (SE_L, SE_R), lr_indices)

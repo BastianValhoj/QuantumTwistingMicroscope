@@ -4,6 +4,8 @@ import numpy as np
 
 from tqdm.auto import tqdm
 
+def parse_lwc(folder):
+	return tuple(int(part[1:]) for part in folder.name.split("_"))
 
 def path_finder(folder="QTM") -> Path:
     """Find the absolute path to project 'folder' (default 'QTM', the root dir)"""
