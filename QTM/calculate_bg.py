@@ -21,16 +21,22 @@ LIST_OF_STRUCTURES = sorted(RESULTS_DIR.glob("L*_W*_C*"))
 LIST_LWC = [parse_lwc(folder) for folder in LIST_OF_STRUCTURES] 
 
 def find_bg(DATA, site, atol=0.01, energy_window=1.0, kidx=None):
+	"""Find bandgap from LDOS data at given site index.
+	The `DATA` dictionary is of the computations for a given structure.  
+	The `site` is the index of the atom in the device to consider for LDOS.  
+	`atol` is the threshold below which LDOS is considered zero (i.e., in bandgap).  
+	`energy_window` is the energy range around Fermi level (0 eV) to consider for bandgap search.  
+	`kidx` is the k-point index to consider (if multiple k-points were used in calculation).
+	"""
 	data = dict(DATA)
-	# tqdm.write(str(data.keys()))
-	Nk, NE, Nsites = DATA["ldos"].shape
+	Nk, NE, Nsites = DATA["ldos"].shape; 
 	if Nsites < site:
 		warn(
-      f"""Chosen site index exceeds number of sites in LDOS data. Chose {site} but only {Nsites} sites available.
-      This is likely due to argument 'site' being chosen for center-most atom of device,
-      while LDOS data only contains center region atoms (i.e., device with electrodes removed).
-      Therefore, adjusting site index accordingly."""
-       )
+		f"""Chosen site index exceeds number of sites in LDOS data. Chose {site} but only {Nsites} sites available.
+		This is likely due to argument 'site' being chosen for center-most atom of device,
+		while LDOS data only contains center region atoms (i.e., device with electrodes removed).
+		Therefore, adjusting site index accordingly."""
+		)
 		site = 0
 	if kidx == None:
 		if Nk == 1:
@@ -45,56 +51,12 @@ def find_bg(DATA, site, atol=0.01, energy_window=1.0, kidx=None):
 			norm_ldos = normalize(ldos[kidx,:,site])
 			energies = data["energies"]
 			
+			# mask for energies within energy window around Fermi level (0 eV)
 			near_fermi = np.abs(energies) <= energy_window
-		
+
 			is_gap = (norm_ldos <= atol) & near_fermi
 			bgmin = energies[is_gap].min() if np.any(is_gap) else 0.0
 			bgmax = energies[is_gap].max() if np.any(is_gap) else 0.0
-			# if not np.any(is_gap):
-			# 	tqdm.write(f"No bandgap found for modulation {modulation} at site {site} with atol={atol} and energy_window={energy_window} eV.")
-			# 	bgmin = 0.0
-			# 	bgmax = 0.0
-			# 	continue
-			# # indicies qualifying as bandgap
-			# gap_indices = np.where(is_gap)[0]
-			# # Find the index of the energy level closest to E=0
-			# zero_idx = np.argmin(np.abs(energies))
-			# if len(gap_indices) > 0:
-       		# 	# 1. group into contiguous islands
-			# 	islands = np.split(gap_indices, np.where(np.diff(gap_indices) > 1)[0] + 1)
-			# 	# 3. Check if island contains zero_idx
-			# 	best_island = None
-			# 	min_dist = float("inf")
-			# 	for isl in islands:
-			# 		if isl.min() <= zero_idx <= isl.max():
-			# 			best_island = isl
-			# 			break # found the 'true' gap crossing E=0
-			# 		dist = min(np.abs(isl - zero_idx))
-			# 		if dist < min_dist:
-			# 			min_dist = dist
-			# 			best_island = isl
-			# 	best_island = min(islands, key=lambda isl: np.abs(isl.mean() - zero_idx))
-			# 	vbm_idx, cbm_idx = best_island.min(), best_island.max()
-			# 	bgmin, bgmax = energies[vbm_idx], energies[cbm_idx] # find min energy level for bg
-			# else:
-			# 	bgmin, bgmax = 0.0, 0.0
-   
-   
-			# 4. ROBUST STEP: Only consider the gap that actually crosses or touches E=0
-			# if zero_idx in gap_indices:
-			# 	# find contiguous gap region around E=0
-			# 	start_gap = gap_indices[gap_indices <= zero_idx][-1]
-			# 	end_gap = gap_indices[gap_indices >= zero_idx][0]
-
-			# 	vbm_idx = gap_indices[np.where(gap_indices == start_gap)[0][0]]
-			# 	while vbm_idx - 1 in gap_indices: vbm_idx -= 1
-
-			# 	cbm_idx = gap_indices[np.where(gap_indices == end_gap)[0][0]]
-			# 	while cbm_idx + 1 in gap_indices: cbm_idx += 1
-			# else:
-			# 	# If E=0 isn't in a gap, we take the absolute min/max of the detected region
-			# 	vbm_idx = gap_indices.min()
-			# 	cbm_idx = gap_indices.max()
 			
    
 			
