@@ -4,7 +4,7 @@ import sisl
 import numpy as np
 from ._wrappers import timeit
 from .structure import build_electrode, build_nanoribbon, build_reduced_device, infer_centersize, find_nearest_atoms
-from .energies import hamiltonian, lr_energies, add_lr_energies, LDOS
+from .energies import hamiltonian, lr_energies, add_lr_energies, LDOS, multi_LDOS
 from .loader import path_finder, load_datastructure
 from .helpers import in_notebook
 # from .energies import multi_LDOS_parallel as multi_ldos
